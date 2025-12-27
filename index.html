@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zenith Prime | Unified Fire Suite</title>
-    <script src="https://cdn.jsdelivr.net/npm/webadb@0.0.10/dist/webadb.min.js"></script>
+    
+    <script src="https://unpkg.com/webadb@0.0.10/dist/webadb.js"></script>
+    
     <style>
         :root { --amazon: #ff9900; --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --accent: #58a6ff; --danger: #f85149; --success: #3fb950; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
         nav { background: #010409; display: flex; justify-content: center; border-bottom: 1px solid #30363d; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .tab-btn { background: none; border: none; color: #8b949e; padding: 15px 20px; cursor: pointer; font-weight: bold; transition: 0.2s; border-bottom: 2px solid transparent; font-size: 0.9em; }
-        .tab-btn:hover { color: var(--text); }
         .tab-btn.active { color: var(--amazon); border-bottom: 2px solid var(--amazon); }
         .container { max-width: 1000px; margin: 20px auto; padding: 0 20px; }
         .tab-content { display: none; animation: fadeIn 0.3s ease; }
@@ -34,7 +35,7 @@
 
 <nav>
     <button class="tab-btn active" onclick="openTab(event, 'dash')">DASHBOARD</button>
-    <button class="tab-btn" onclick="openTab(event, 'performance')">PERFORMANCE</button>
+    <button class="tab-btn" onclick="performanceTab(event)">PERFORMANCE</button>
     <button class="tab-btn" onclick="openTab(event, 'kindle')">KINDLE</button>
     <button class="tab-btn" onclick="openTab(event, 'recovery')">RECOVERY</button>
 </nav>
@@ -43,7 +44,11 @@
     <div id="dash" class="tab-content active">
         <div class="card">
             <h2>Zenith Connection</h2>
-            <div id="lib-status" style="text-align:center; color: #888; margin-bottom: 10px; font-size: 0.8em;">Syncing Drivers...</div>
+            <div id="lib-status" style="text-align:center; color: #888; margin-bottom: 10px; font-size: 0.9em;">Awaiting Drivers...</div>
+            <div id="retry-container" style="display:none; text-align:center;">
+                <button onclick="location.reload()" class="btn-outline" style="width: auto; padding: 5px 15px;">Retry Loading Drivers</button>
+            </div>
+
             <div class="stats-grid">
                 <div><div style="font-size: 0.7em; color: #8b949e;">BATTERY</div><div id="stat-batt" class="stat-val">--</div></div>
                 <div><div style="font-size: 0.7em; color: #8b949e;">RAM FREE</div><div id="stat-ram" class="stat-val">--</div></div>
@@ -78,7 +83,6 @@
                 <h3>Optimization</h3>
                 <button class="tool btn-red" disabled onclick="massDebloat()">Run Master Purge</button>
                 <button class="tool" disabled onclick="runCmd('pm uninstall --user 0 com.amazon.firelauncher')">Disable Fire Launcher</button>
-                <button class="tool" disabled onclick="runCmd('pm uninstall --user 0 com.amazon.device.software.ota')">Block OTA Updates</button>
             </div>
         </div>
     </div>
@@ -96,7 +100,6 @@
             <h2>Emergency Tools</h2>
             <button class="tool btn-blue" disabled onclick="restoreAll()">Full Factory Restoration</button>
             <button class="tool btn-red" disabled onclick="runCmd('reboot recovery')">Force Recovery Mode</button>
-            <button class="tool btn-outline" disabled onclick="runCmd('reboot')">System Restart</button>
         </div>
     </div>
 
@@ -106,23 +109,25 @@
 <script>
     let adb, device;
     const logEl = document.getElementById('log');
-    function log(m) { 
-        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-        logEl.innerHTML += `<div><span style="color:#555">[${time}]</span> ${m}</div>`; 
-        logEl.scrollTop = logEl.scrollHeight; 
-    }
+    function log(m) { logEl.innerHTML += `<div>> ${m}</div>`; logEl.scrollTop = logEl.scrollHeight; }
 
-    window.onload = () => {
+    // Improved initialization check
+    function checkDrivers() {
         if (typeof WebADB !== 'undefined') {
             document.getElementById('lib-status').innerText = "✅ Drivers Ready";
             document.getElementById('lib-status').style.color = "var(--success)";
             document.getElementById('connect').disabled = false;
-            log("System initialized for mpetschelmedia.");
+            document.getElementById('retry-container').style.display = "none";
+            log("Zenith Prime Ready.");
         } else {
-            document.getElementById('lib-status').innerText = "⚠️ Driver Error: Retrying...";
-            setTimeout(() => location.reload(), 3000);
+            document.getElementById('lib-status').innerText = "⚠️ Driver Timeout: Check Connection";
+            document.getElementById('retry-container').style.display = "block";
+            log("Driver failure. Please refresh.");
         }
-    };
+    }
+
+    // Run check after a short delay
+    setTimeout(checkDrivers, 1500);
 
     function openTab(evt, tabName) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -130,6 +135,8 @@
         document.getElementById(tabName).classList.add('active');
         evt.currentTarget.classList.add('active');
     }
+
+    function performanceTab(e) { openTab(e, 'performance'); }
 
     document.getElementById('connect').onclick = async () => {
         try {
@@ -166,6 +173,7 @@
     async function restoreAll() {
         const apps = ["com.amazon.dee.app", "com.amazon.avod", "com.amazon.mp3", "com.amazon.photos", "com.amazon.windowshop", "com.amazon.venezia", "com.amazon.kindle", "com.amazon.firelauncher", "com.amazon.kindle.cms"];
         for(let p of apps) { log("Restoring: " + p); await adb.execute(`pm install-existing ${p}`); }
+        log("Restoration Finished.");
     }
 
     async function installAPK() {
