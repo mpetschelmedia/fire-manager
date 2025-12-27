@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zenith Prime | Unified Fire Suite</title>
+    <script src="https://unpkg.com/webadb@0.0.10/dist/webadb.js"></script>
+    <style>
+        :root { --amazon: #ff9900; --bg: #0d1117; --card: #161b22; --text: #c9d1d9; --accent: #58a6ff; --danger: #f85149; --success: #3fb950; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; }
+        
+        /* Navigation Tabs */
+        nav { background: #010409; display: flex; justify-content: center; border-bottom: 1px solid #30363d; position: sticky; top: 0; z-index: 100; }
+        .tab-btn { background: none; border: none; color: #8b949e; padding: 15px 25px; cursor: pointer; font-weight: bold; transition: 0.2s; border-bottom: 2px solid transparent; }
+        .tab-btn:hover { color: var(--text); }
+        .tab-btn.active { color: var(--amazon); border-bottom: 2px solid var(--amazon); }
+
+        .container { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .card { background: var(--card); border-radius: 8px; padding: 20px; border: 1px solid #30363d; margin-bottom: 20px; }
+        h2 { color: var(--amazon); margin-top: 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px; }
+        
+        button { background: var(--amazon); color: #000; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin: 5px 0; }
+        button:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
+        .btn-blue { background: var(--accent); color: white; }
+        .btn-red { background: var(--danger); color: white; }
+
+        #log { background: #000; color: #39ff14; padding: 15px; height: 180px; overflow-y: auto; font-family: monospace; border-radius: 8px; border: 1px solid #30363d; margin-top: 20px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; text-align: center; margin-bottom: 15px; }
+        .stat-val { font-size: 1.2em; font-weight: bold; color: var(--accent); }
+    </style>
+</head>
+<body>
+
+<nav>
+    <button class="tab-btn active" onclick="openTab(event, 'dash')">DASHBOARD</button>
+    <button class="tab-btn" onclick="openTab(event, 'performance')">PERFORMANCE</button>
+    <button class="tab-btn" onclick="openTab(event, 'kindle')">KINDLE</button>
+    <button class="tab-btn" onclick="openTab(event, 'recovery')">RECOVERY</button>
+</nav>
+
+<div class="container">
+    <div id="dash" class="tab-content active">
+        <div class="card">
+            <h2>Zenith Connection</h2>
+            <div class="stats-grid">
+                <div><div>Battery</div><div id="stat-batt" class="stat-val">--</div></div>
+                <div><div>Memory Free</div><div id="stat-ram" class="stat-val">--</div></div>
+                <div><div>Status</div><div id="stat-conn" class="stat-val" style="color:var(--danger)">OFFLINE</div></div>
+            </div>
+            <button id="connect" style="background:var(--success); color:white;">INITIALIZE USB LINK</button>
+        </div>
+        
+        <div class="card">
+            <h2>Google Play Sideload</h2>
+            <p>1. <a href="https://www.apkmirror.com/apk/google-inc/google-account-manager/" target="_blank" style="color:var(--accent)">Manager</a> 
+               2. <a href="https://www.apkmirror.com/apk/google-inc/google-services-framework/" target="_blank" style="color:var(--accent)">Framework</a> 
+               3. <a href="https://www.apkmirror.com/apk/google-inc/google-play-services/" target="_blank" style="color:var(--accent)">Services</a> 
+               4. <a href="https://www.apkmirror.com/apk/google-inc/google-play-store/" target="_blank" style="color:var(--accent)">Store</a></p>
+            <input type="file" id="apk-file">
+            <button class="tool" disabled onclick="installAPK()">Push & Install Selected APK</button>
+        </div>
+    </div>
+
+    <div id="performance" class="tab-content">
+        <div class="grid">
+            <div class="card">
+                <h3>UI Optimization</h3>
+                <button class="tool" disabled onclick="runCmd('settings put global window_animation_scale 0.5; settings put global transition_animation_scale 0.5')">Speed Up Animations</button>
+                <button class="tool" disabled onclick="runCmd('wm density 240')">Zenith Resolution (240 DPI)</button>
+                <button class="tool" disabled onclick="runCmd('wm density reset')">Reset Resolution</button>
+            </div>
+            <div class="card">
+                <h3>System Purge</h3>
+                <button class="tool btn-red" disabled onclick="massDebloat()">Run Master Debloat</button>
+                <button class="tool" disabled onclick="runCmd('pm uninstall --user 0 com.amazon.firelauncher')">Kill Amazon Launcher</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="kindle" class="tab-content">
+        <div class="card">
+            <h2>Bibliophile Engine</h2>
+            <p>Targeted removal of tracking and ads while keeping your books.</p>
+            <button class="tool" disabled onclick="runCmd('pm uninstall --user 0 com.amazon.kindle.kso')">Remove Kindle Lockscreen Ads</button>
+            <button class="tool" disabled onclick="runCmd('pm install-existing com.amazon.kindle')">Verify Kindle Reader App</button>
+        </div>
+    </div>
+
+    <div id="recovery" class="tab-content">
+        <div class="card">
+            <h2>Disaster Recovery</h2>
+            <button class="tool btn-blue" disabled onclick="restoreAll()">Restore All Amazon Apps</button>
+            <button class="tool btn-red" disabled onclick="runCmd('reboot recovery')">Reboot to Hardware Recovery</button>
+            <button class="tool" disabled onclick="runCmd('reboot')">Standard Reboot</button>
+        </div>
+    </div>
+
+    <div id="log">Console: Waiting for connection...</div>
+</div>
+
+<script>
+    let adb, device;
+    const logEl = document.getElementById('log');
+
+    function log(m) { logEl.innerHTML += `<div>> ${m}</div>`; logEl.scrollTop = logEl.scrollHeight; }
+
+    function openTab(evt, tabName) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active');
+        evt.currentTarget.classList.add('active');
+    }
+
+    document.getElementById('connect').onclick = async () => {
+        try {
+            const webadb = new WebADB();
+            device = await webadb.decode(await navigator.usb.requestDevice({ filters: [] }));
+            await device.connect();
+            adb = await device.shell();
+            document.getElementById('stat-conn').innerText = "ONLINE";
+            document.getElementById('stat-conn').style.color = "var(--success)";
+            document.querySelectorAll('.tool').forEach(b => b.disabled = false);
+            log("Zenith Link Established.");
+            updateStats();
+        } catch (e) { log("Error: " + e.message); }
+    };
+
+    async function updateStats() {
+        const batt = await adb.execute("dumpsys battery | grep level");
+        const mem = await adb.execute("free -m | grep Mem");
+        document.getElementById('stat-batt').innerText = batt.split(":")[1].trim() + "%";
+        document.getElementById('stat-ram').innerText = mem.split(/\s+/)[3] + "MB";
+    }
+
+    async function runCmd(c) { log("Exec: " + c); await adb.execute(c); log("Success."); }
+
+    async function massDebloat() {
+        const targets = ["com.amazon.dee.app", "com.amazon.avod", "com.amazon.mp3", "com.amazon.photos", "com.amazon.windowshop", "com.amazon.cloud9", "com.amazon.vizzini"];
+        for(let p of targets) { log("Nuking: " + p); await adb.execute(`pm uninstall --user 0 ${p}`); }
+        log("Purge Complete.");
+    }
+
+    async function restoreAll() {
+        const apps = ["com.amazon.dee.app", "com.amazon.avod", "com.amazon.mp3", "com.amazon.photos", "com.amazon.windowshop", "com.amazon.venezia", "com.amazon.kindle", "com.amazon.firelauncher", "com.amazon.kindle.cms"];
+        for(let p of apps) { log("Restoring: " + p); await adb.execute(`pm install-existing ${p}`); }
+    }
+
+    async function installAPK() {
+        const file = document.getElementById('apk-file').files[0];
+        if(!file) return alert("Select APK.");
+        log(`Uploading: ${file.name}`);
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const sync = await device.sync();
+            await sync.push(new Uint8Array(e.target.result), `/data/local/tmp/tmp.apk`);
+            await sync.quit();
+            await adb.execute("pm install -r /data/local/tmp/tmp.apk");
+            log("Installed Successfully.");
+        };
+        reader.readAsArrayBuffer(file);
+    }
+</script>
+</body>
+</html>
